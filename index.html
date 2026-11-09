@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>THE BACKROOMS — a browser horror game</title>
+    <meta
+      name="description"
+      content="You noclipped out of reality. Explore the endless yellow rooms, collect almond water and get out before the thing in the dark finds you. A first-person backrooms horror game for the browser."
+    />
+    <meta name="theme-color" content="#0a0a06" />
+    <meta property="og:title" content="THE BACKROOMS" />
+    <meta
+      property="og:description"
+      content="Damp carpet. Fluorescent hum. No windows. Collect the almond water and find the exit — something else is already awake."
+    />
+    <meta property="og:type" content="website" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a06'/%3E%3Crect x='5' y='9' width='22' height='14' fill='%23d9c879'/%3E%3Crect x='5' y='13' width='22' height='1' fill='%230a0a06'/%3E%3Crect x='5' y='18' width='22' height='1' fill='%230a0a06'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <main id="stage">
+      <canvas id="view" aria-label="First person view of the backrooms"></canvas>
+
+      <div id="fx" aria-hidden="true">
+        <div id="fx-fear"></div>
+        <div id="fx-vignette"></div>
+        <div id="fx-grain"></div>
+        <div id="fx-scan"></div>
+        <div id="fade"></div>
+      </div>
+
+      <div id="hud" hidden>
+        <div class="hud-top">
+          <div class="hud-block">
+            <div id="levelCode" class="hud-code">LEVEL 0</div>
+            <div class="hud-objective">ALMOND WATER <b id="bottleCount">0 / 3</b></div>
+          </div>
+          <div class="hud-block right">
+            <div id="timeLine" class="hud-time">00:00</div>
+            <div id="flashLine" class="hud-flash">LIGHT ON</div>
+          </div>
+        </div>
+        <div id="reticle" aria-hidden="true"></div>
+        <div class="hud-bottom">
+          <div id="hintLine" class="hud-hint"></div>
+          <div class="stamina" aria-hidden="true"><div id="staminaBar"></div></div>
+        </div>
+      </div>
+
+      <div id="card" aria-hidden="true">
+        <div class="card-code" id="cardCode">LEVEL 0</div>
+        <div class="card-name" id="cardName">The Lobby</div>
+        <div class="card-intro" id="cardIntro">Damp carpet. Fluorescent hum. No windows.</div>
+      </div>
+
+      <div id="toast" role="status" aria-live="polite" hidden></div>
+
+      <div id="touch" hidden>
+        <div id="stickL" class="stick">
+          <div id="knobL" class="knob"></div>
+          <span>MOVE</span>
+        </div>
+        <div id="stickR" class="stick">
+          <div class="knob ghost"></div>
+          <span>LOOK</span>
+        </div>
+        <div class="touch-actions">
+          <button id="btnSprint" class="tbtn" type="button">RUN</button>
+          <button id="btnFlash" class="tbtn active" type="button">LIGHT</button>
+          <button id="btnPause" class="tbtn small" type="button" aria-label="Pause">II</button>
+        </div>
+      </div>
+
+      <section id="menu" class="screen">
+        <div class="menu-inner">
+          <div class="eyebrow"><span class="dot"></span> OUT OF BOUNDS · NO EXIT RECORDED</div>
+          <h1 class="title">THE<br /><span>BACKROOMS</span></h1>
+          <p class="tagline">
+            You noclipped out of reality. The carpet is damp. The lights never stop humming.
+            Collect the almond water, find the door, and do not look away.
+          </p>
+          <div class="menu-actions">
+            <button id="btnStart" class="btn btn-primary" type="button">Enter Level 0</button>
+            <button id="btnHow" class="btn" type="button">How to play</button>
+            <button id="btnOpts" class="btn" type="button">Options</button>
+          </div>
+
+          <div id="howto" class="panel" hidden>
+            <div class="row"><span>MOVE</span><b>W A S D / arrows</b></div>
+            <div class="row"><span>LOOK</span><b>Mouse (click to capture)</b></div>
+            <div class="row"><span>RUN</span><b>Shift — it can hear you</b></div>
+            <div class="row"><span>FLASHLIGHT</span><b>F</b></div>
+            <div class="row"><span>PAUSE / AUDIO</span><b>Esc / M</b></div>
+            <div class="row"><span>TOUCH</span><b>Left stick moves, right pad looks</b></div>
+            <hr />
+            <p>
+              Every level hides cartons of <b>almond water</b>. Collect all of them to unlock the
+              exit door. Something is awake in the dark. It freezes while you look straight at
+              it — but staring too long makes it angry. Sprinting draws it in. Running out of
+              breath is not the worst thing that can happen.
+            </p>
+            <p>There are four levels between you and daylight. Good luck.</p>
+          </div>
+
+          <div id="options" class="panel options" hidden>
+            <label class="row">
+              <span>MOUSE SENSITIVITY</span>
+              <span class="control">
+                <input id="optSens" type="range" min="0.2" max="2.5" step="0.05" value="1" />
+                <b id="sensVal">1.00</b>
+              </span>
+            </label>
+            <label class="row">
+              <span>VOLUME</span>
+              <span class="control">
+                <input id="optVol" type="range" min="0" max="1" step="0.01" value="0.72" />
+                <b id="volVal">72</b>
+              </span>
+            </label>
+            <label class="row">
+              <span>RENDER QUALITY</span>
+              <select id="optQuality">
+                <option value="0">Low</option>
+                <option value="1">Medium</option>
+                <option value="2">High</option>
+              </select>
+            </label>
+            <label class="row check">
+              <span>REDUCE FLASHING &amp; GRAIN</span>
+              <input id="optReduce" type="checkbox" />
+            </label>
+            <label class="row check">
+              <span>MUTE AUDIO</span>
+              <input id="optMute" type="checkbox" />
+            </label>
+          </div>
+
+          <p class="warn">
+            Contains flashing lights, sudden loud sounds and sustained stalking. Headphones
+            recommended. Not recommended for photosensitive players.
+          </p>
+          <p class="best" id="menuBest">NO RECORDED SURVIVOR</p>
+        </div>
+      </section>
+
+      <section id="pause" class="screen" hidden>
+        <div class="panel-box">
+          <div class="screen-code">SIGNAL PAUSED</div>
+          <h2>PAUSED</h2>
+          <p class="muted">The hum continues without you.</p>
+          <div class="menu-actions col">
+            <button id="btnResume" class="btn btn-primary" type="button">Resume</button>
+            <button id="btnRestart" class="btn" type="button">Restart from Level 0</button>
+            <button id="btnQuit" class="btn" type="button">Quit to menu</button>
+          </div>
+          <p class="warn">Resume recaptures the mouse. Esc also resumes.</p>
+        </div>
+      </section>
+
+      <section id="dead" class="screen" hidden>
+        <div class="panel-box">
+          <div class="screen-code danger">SIGNAL LOST</div>
+          <h2 class="red">YOU WERE FOUND</h2>
+          <p class="muted" id="deadLevel">THE LOBBY — LEVEL 1</p>
+          <div class="stats">
+            <div><span>TIME</span><b id="deadTime">00:00</b></div>
+            <div><span>ALMOND WATER</span><b id="deadBottles">0</b></div>
+            <div><span>DEEPEST</span><b id="deadBest">1</b></div>
+          </div>
+          <div class="menu-actions col">
+            <button id="btnRetry" class="btn btn-primary" type="button">Wake up again</button>
+            <button id="btnMenuDead" class="btn" type="button">Main menu</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="win" class="screen" hidden>
+        <div class="panel-box win-box">
+          <div class="screen-code good">EXIT FOUND</div>
+          <h2 class="green">YOU GOT OUT</h2>
+          <p class="muted">
+            Daylight. Real air. The humming is gone. You cannot remember how long you were
+            inside, and nobody believes you. For now, that is fine.
+          </p>
+          <div class="stats">
+            <div><span>TIME</span><b id="winTime">00:00</b></div>
+            <div><span>ALMOND WATER</span><b id="winBottles">0</b></div>
+            <div><span>DEEPEST</span><b id="winBest">LEVEL 4</b></div>
+          </div>
+          <div class="menu-actions col">
+            <button id="btnAgain" class="btn btn-primary" type="button">Go back in</button>
+            <button id="btnMenuWin" class="btn" type="button">Main menu</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <noscript>
+      <p style="color: #d9c879; font-family: monospace; padding: 24px">
+        This game needs JavaScript. The backrooms will wait.
+      </p>
+    </noscript>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
